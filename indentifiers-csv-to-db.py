@@ -2,11 +2,10 @@ import csv
 import argparse
 import pathlib
 import sqlite3
-import subprocess
-import io
-import gzip
 import functools
 import dateutil.parser
+
+from utils import *
 
 insert_tpl = '''
 INSERT INTO identifiers_history VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -32,21 +31,6 @@ def parse_args():
     )
     return parser.parse_args()
 
-
-def open_file(file_path):
-    mode = 'rt'
-    encoding = 'utf-8'
-    if file_path.suffix == '.7z':
-        f = subprocess.Popen(
-            ['7z', 'e', '-so', str(file_path)],
-            stdout=subprocess.PIPE,
-        )
-        w = io.TextIOWrapper(f.stdout, encoding=encoding)
-        return w
-    elif file_path.suffix == '.gz':
-        return gzip.open(str(file_path), mode, encoding=encoding)
-    else:
-        return file_path.open(mode, encoding=encoding)
 
 def create_tables_and_indexes(connection):
     with connection:
@@ -102,7 +86,7 @@ def main():
 
     for file_path in args.input_files:
         print('Reading', file_path, '...')
-        input_file = open_file(file_path)
+        input_file = open_compressed_file(file_path)
         with input_file, conn:
             csvreader = csv.reader(input_file)
             records = (parse_record(r, 'en') for r in csvreader)
