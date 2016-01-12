@@ -22,7 +22,7 @@ InputRecord = collections.namedtuple(
 
 OutputRecord = collections.namedtuple(
     'OutputRecord',
-    "identifier_type identifier_id start_date end_date project page_id",
+    "project page_id identifier_type identifier_id start_date end_date",
 )
 
 def parse_args():
@@ -50,13 +50,13 @@ def create_tables_and_indexes(connection):
         connection.executescript('''
 -- Table: identifiers_history
 CREATE TABLE IF NOT EXISTS identifiers_history (
+    project TEXT NOT NULL,
+    page_id INTEGER NOT NULL,
     identifier_type TEXT NOT NULL,
     identifier_id TEXT NOT NULL,
     start_date DATETIME,
     end_date DATETIME,
-    project TEXT NOT NULL,
-    page_id INTEGER NOT NULL,
-    PRIMARY KEY (identifier_type, identifier_id, start_date, end_date, project, page_id)
+    PRIMARY KEY (project, page_id, identifier_type, identifier_id, start_date, end_date)
 );
 
 -- Index: timestamp_asc
@@ -110,22 +110,26 @@ def merge_records(records):
                 assert r1.revision_id != r2.revision_id
 
                 yield OutputRecord(
+                    r1.project,
+                    r1.page_id,
                     r1.identifier_type,
                     r1.identifier_id,
                     r1.timestamp,
                     r2.timestamp,
-                    r1.project,
-                    r1.page_id,
                 )
 
 def main():
     args = parse_args()
 
     conn = sqlite3.connect(args.sqlite_file)
+    # db = peewee.SqliteDatabase(args.sqlite_file, autocommit=False)
+
+    # models.database_proxy.initialize(db)
 
     if args.create_tables:
         print('Creating tables and indexes')
         create_tables_and_indexes(conn)
+        # models.create_tables()
 
     for file_path in args.input_files:
         print('Reading', file_path, '...')
