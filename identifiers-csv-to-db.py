@@ -1,11 +1,15 @@
+import ipdb
 import csv
 import argparse
 import pathlib
-import sqlite3
+# import peewee
 import functools
 import dateutil.parser
 import itertools
 import collections
+import sqlite3
+
+import models
 
 from utils import *
 
@@ -45,7 +49,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def create_tables_and_indexes(connection):
+def create_tables(connection):
     with connection:
         connection.executescript('''
 -- Table: identifiers_history
@@ -58,7 +62,11 @@ CREATE TABLE IF NOT EXISTS identifiers_history (
     end_date DATETIME,
     PRIMARY KEY (project, page_id, identifier_type, identifier_id, start_date, end_date)
 );
+    ''')
 
+def create_indexes(connection):
+    with connection:
+        connection.executescript('''
 -- Index: timestamp_asc
 -- CREATE INDEX IF NOT EXISTS timestamp_asc ON identifiers_history (timestamp ASC);
 
@@ -72,8 +80,7 @@ CREATE INDEX IF NOT EXISTS identifier_asc ON identifiers_history (
 CREATE INDEX IF NOT EXISTS project_page_revision_asc ON identifiers_history (
     project ASC,
     page_id ASC
-);
-    ''')
+);''')
 
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -127,10 +134,11 @@ def main():
     # models.database_proxy.initialize(db)
 
     if args.create_tables:
-        print('Creating tables and indexes')
-        create_tables_and_indexes(conn)
+        print('Creating tables')
+        create_tables(conn)
         # models.create_tables()
-
+    conn.execute('PRAGMA synchronous = OFF')
+    conn.execute('PRAGMA journal_mode = MEMORY')
     for file_path in args.input_files:
         print('Reading', file_path, '...')
         input_file = open_compressed_file(file_path)
@@ -143,6 +151,8 @@ def main():
 
             conn.executemany(insert_tpl, merge_records(input_records))
 
+    print('Creating indexes...')
+    create_indexes(conn)
 
 if __name__ == '__main__':
     main()
