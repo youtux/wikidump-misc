@@ -1,3 +1,4 @@
+import pathlib
 import subprocess
 import io
 import gzip
@@ -6,6 +7,10 @@ import gzip
 def open_compressed_file(file_path):
     mode = 'rt'
     encoding = 'utf-8'
+
+    if not isinstance(file_path, pathlib.Path):
+        file_path = pathlib.Path(file_path)
+
     if file_path.suffix == '.7z':
         f = subprocess.Popen(
             ['7z', 'e', '-so', str(file_path)],
