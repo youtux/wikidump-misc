@@ -81,6 +81,10 @@ class ViewsCounter:
 
         result = self.finder.search(project, page)
 
+        if len(result) == 0:
+            print("Warning: stats not found")
+            return lambda val: 0
+
         views_list = [(ts, views) for ts, views, _ in result]
 
         timestamps = [t for t, _ in views_list]
