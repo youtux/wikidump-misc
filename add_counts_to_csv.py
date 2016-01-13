@@ -102,8 +102,8 @@ class ViewsCounter:
             index = xs.index(timestamp_unix)
             ys[index] = views
 
-        print('xs', xs)
-        print('ys', ys)
+        # print('xs', xs)
+        # print('ys', ys)
 
         scipy_interp = scipy.interpolate.interp1d(
             xs,
@@ -112,7 +112,7 @@ class ViewsCounter:
         )
 
         def interp(x):
-            if isinstance(x, datetime):
+            if isinstance(x, datetime.datetime):
                 x = to_unix_timestamp(x)
 
             if x < xs[0]:
@@ -122,6 +122,7 @@ class ViewsCounter:
             else:
                 return scipy_interp(x)
 
+        print('computed!')
         return interp
 
     def count(self, project, page, start_date, end_date):
