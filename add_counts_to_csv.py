@@ -57,9 +57,15 @@ def parse_record(raw_record):
     project, page_id, page_title, identifier_type, identifier_id, start_date, end_date = raw_record
 
     page_id = int(page_id)
-    start_date = parse_timestamp(start_date)
-    if end_date is not None:
+    if not end_date:
+        end_date = None
+    else:
         end_date = parse_timestamp(end_date)
+
+    if not start_date:
+        start_date = None
+    else:
+        start_date = start_date = parse_timestamp(start_date)
 
     return InputRecord(
         project,
@@ -135,12 +141,22 @@ class ViewsCounter:
             else:
                 return scipy_interp(x)
 
-        return interp
+        return interp, xs[0], xs[-1]
 
     def count(self, project, page, start_date, end_date):
-        interp = self.interp_fn(project, page)
+        interp, min_, max_ = self.interp_fn(project, page)
 
-        return interp(end_date) - interp(start_date)
+        if not end_date:
+            upper = max_
+        else:
+            upper = interp(end_date)
+
+        if not start_date:
+            lower = min_
+        else:
+            lower = interp(start_date)
+
+        return upper - lower
 
 
 def to_unix_timestamp(datetime):
