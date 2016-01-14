@@ -13,6 +13,8 @@ import pagecountssearch
 
 import utils
 
+now = datetime.datetime.now
+
 InputRecord = collections.namedtuple(
     'InputRecord',
     [
@@ -76,15 +78,19 @@ class ViewsCounter:
 
     @functools.lru_cache(10000)
     def interp_fn(self, project, page):
-        print('Computing interpolation function for ', project, page)
         granularity = self.granularity
-
+        tic = now()
+        print('Searching for ', project, page)
         result = self.finder.search(project, page)
+        toc = now()
+        print('Search took:', toc - tic)
 
         if len(result) == 0:
             print("Warning: stats not found")
             return lambda val: 0
 
+        print('Computing interpolation function for ', project, page)
+        tic = now()
         views_list = [(ts, views) for ts, views, _ in result]
 
         timestamps = [t for t, _ in views_list]
@@ -115,6 +121,9 @@ class ViewsCounter:
             assume_sorted=True,
         )
 
+        toc = now()
+        print('Interp took:', toc - tic)
+
         def interp(x):
             if isinstance(x, datetime.datetime):
                 x = to_unix_timestamp(x)
@@ -126,7 +135,6 @@ class ViewsCounter:
             else:
                 return scipy_interp(x)
 
-        print('computed!')
         return interp
 
     def count(self, project, page, start_date, end_date):
@@ -138,64 +146,69 @@ class ViewsCounter:
 def to_unix_timestamp(datetime):
     return int(datetime.timestamp())
 
-def extract_views(time_spans, views_list, granularity=datetime.timedelta(hours=1)):
-    timestamps = [t for t, _ in views_list]
-    views = [v for _, v in views_list]
-
-    first, last = timestamps[0], timestamps[-1]
-    start = first - granularity
-    end = last + granularity
-
-
-    start_unix = int(start.timestamp())
-    end_unix = int(end.timestamp())
-    granularity_unix = int(granularity.total_seconds())
-
-    x = list(range(start_unix, end_unix, granularity_unix))
-    y = list(0 for _ in range(len(x)))
-
-    for timestamp, views in views_list:
-        timestamp_unix = int(timestamp.timestamp())
-        index = x.index(timestamp_unix)
-        y[index] = views
-
-    print('x', x)
-    print('y', y)
-
-    interp_f = scipy.interpolate.interp1d(x, numpy.cumsum(y), assume_sorted=True)
-
-    count = 0
-    for start, end in time_spans:
-        assert start <= end
-        start_unix, end_unix = to_unix_timestamp(start), to_unix_timestamp(end)
-        start_unix = max(start_unix, x[0])
-        start_unix = min(start_unix, x[-1])
-
-        end_unix = min(end_unix, x[-1])
-        end_unix = max(end_unix, x[0])
-
-        count += interp_f(end_unix) - interp_f(start_unix)
-    return count
-
-
-def test_extract_views():
-    utc = datetime.timezone.utc
-    print(extract_views(
-        [TimeSpan(
-            start=datetime.datetime(2014, 1, 1, 0, tzinfo=utc),
-            end=datetime.datetime(2014, 1, 1, 3, 30, tzinfo=utc),
-        )],
-        [
-            (datetime.datetime(2014, 1, 1, 0, tzinfo=utc), 10),
-            (datetime.datetime(2014, 1, 1, 1, tzinfo=utc), 20),
-            (datetime.datetime(2014, 1, 1, 2, tzinfo=utc), 5),
-            (datetime.datetime(2014, 1, 1, 4, tzinfo=utc), 15),
-        ])
-    )
+# def extract_views(time_spans, views_list, granularity=datetime.timedelta(hours=1)):
+#     timestamps = [t for t, _ in views_list]
+#     views = [v for _, v in views_list]
+#
+#     first, last = timestamps[0], timestamps[-1]
+#     start = first - granularity
+#     end = last + granularity
+#
+#
+#     start_unix = int(start.timestamp())
+#     end_unix = int(end.timestamp())
+#     granularity_unix = int(granularity.total_seconds())
+#
+#     x = list(range(start_unix, end_unix, granularity_unix))
+#     y = list(0 for _ in range(len(x)))
+#
+#     for timestamp, views in views_list:
+#         timestamp_unix = int(timestamp.timestamp())
+#         index = x.index(timestamp_unix)
+#         y[index] = views
+#
+#     print('x', x)
+#     print('y', y)
+#
+#     interp_f = scipy.interpolate.interp1d(
+#         x,
+#         numpy.cumsum(y),
+#         assume_sorted=True)
+#
+#     count = 0
+#     for start, end in time_spans:
+#         assert start <= end
+#         start_unix, end_unix = to_unix_timestamp(start), to_unix_timestamp(end)
+#         start_unix = max(start_unix, x[0])
+#         start_unix = min(start_unix, x[-1])
+#
+#         end_unix = min(end_unix, x[-1])
+#         end_unix = max(end_unix, x[0])
+#
+#         count += interp_f(end_unix) - interp_f(start_unix)
+#     return count
+#
+#
+# def test_extract_views():
+#     utc = datetime.timezone.utc
+#     print(extract_views(
+#         [TimeSpan(
+#             start=datetime.datetime(2014, 1, 1, 0, tzinfo=utc),
+#             end=datetime.datetime(2014, 1, 1, 3, 30, tzinfo=utc),
+#         )],
+#         [
+#             (datetime.datetime(2014, 1, 1, 0, tzinfo=utc), 10),
+#             (datetime.datetime(2014, 1, 1, 1, tzinfo=utc), 20),
+#             (datetime.datetime(2014, 1, 1, 2, tzinfo=utc), 5),
+#             (datetime.datetime(2014, 1, 1, 4, tzinfo=utc), 15),
+#         ])
+#     )
 
 
 def counts_for_record(record, views_counter: ViewsCounter):
     page = wikify_title(record.page_title)
+    print('Evaluating counts for', record.project, page,
+          record.start_date, record.end_date)
 
     return views_counter.count(
         record.project,
