@@ -241,6 +241,8 @@ def main():
     args = parse_args()
     print(args)
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
     counts_finder = pagecountssearch.Finder(args.counts_dataset_dir)
     views_counter = ViewsCounter(
         counts_finder,
