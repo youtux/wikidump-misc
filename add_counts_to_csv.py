@@ -93,7 +93,7 @@ class ViewsCounter:
 
         if len(result) == 0:
             print("Warning: stats not found")
-            return lambda val: 0
+            return (lambda val: 0), 0, 0
 
         print('Computing interpolation function for ', project, page)
         tic = now()
