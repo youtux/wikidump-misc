@@ -207,8 +207,6 @@ def to_unix_timestamp(datetime):
 
 def counts_for_record(record, views_counter: ViewsCounter):
     page = wikify_title(record.page_title)
-    print('Evaluating counts for', record.project, page,
-          record.start_date, record.end_date)
 
     return views_counter.count(
         record.project,
