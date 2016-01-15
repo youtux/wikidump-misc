@@ -3,6 +3,7 @@ import csv
 import argparse
 import pathlib
 import utils
+import phpserialize
 import gzip
 
 
@@ -35,6 +36,16 @@ def parse_args():
     )
     return parser.parse_args()
 
+
+def get_redirect(params: str):
+    try:
+        params = phpserialize.loads(params.encode('utf-8'))
+        redirect = params[b'4::target'].decode('utf-8')
+        return redirect
+    except ValueError:
+        return params
+
+
 def main():
     args = parse_args()
 
@@ -63,12 +74,13 @@ def main():
             if params is None or logtitle is None:
                 continue
 
+            redirect = get_redirect(params)
             timestamp = logitem.find('{http://www.mediawiki.org/xml/export-0.10/}timestamp')
 
             writer.writerow((
                 timestamp.text,
                 logtitle.text,
-                params.text,
+                redirect,
             ))
 
 if __name__ == '__main__':
