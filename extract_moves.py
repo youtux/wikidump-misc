@@ -5,6 +5,7 @@ import pathlib
 import utils
 import phpserialize
 import gzip
+import sys
 
 
 # http://stackoverflow.com/questions/324214/what-is-the-fastest-way-to-parse-large-xml-docs-in-python/326541#326541
@@ -29,11 +30,6 @@ def parse_args():
         type=pathlib.Path,
         help='XML file containing page logs',
     )
-    parser.add_argument(
-        'output_file',
-        type=pathlib.Path,
-        help='Output csv file',
-    )
     return parser.parse_args()
 
 
@@ -52,7 +48,8 @@ def main():
     move_actions = set(['move', 'move_redir'])
 
     input_file = utils.open_compressed_file(args.input_file)
-    output_file = gzip.open(str(args.output_file), 'wt', encoding='utf-8')
+    # output_file = gzip.open(str(args.output_file), 'wt', encoding='utf-8')
+    output_file = sys.stdout
 
     with input_file, output_file:
         writer = csv.writer(output_file)
