@@ -71,7 +71,7 @@ def main():
             if params is None or logtitle is None:
                 continue
 
-            redirect = get_redirect(params)
+            redirect = get_redirect(params.text)
             timestamp = logitem.find('{http://www.mediawiki.org/xml/export-0.10/}timestamp')
 
             writer.writerow((
