@@ -82,7 +82,7 @@ class ViewsCounter:
         self.finder = finder
         self.granularity = granularity
 
-    @functools.lru_cache(10000)
+    @functools.lru_cache(10)
     def interp_fn(self, project, page):
         granularity = self.granularity
         tic = now()
