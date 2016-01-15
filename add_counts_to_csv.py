@@ -44,7 +44,7 @@ OutputRecord = collections.namedtuple(
 
 MoveRecord = collections.namedtuple(
     'MoveRecord',
-    'timestamp from to',
+    'timestamp from_ to',
 )
 
 TimeSpan = collections.namedtuple(
