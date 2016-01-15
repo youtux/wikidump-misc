@@ -305,7 +305,7 @@ def main():
     moves = {}
     with moves_file:
         raw_records = iter(csv.reader(moves_file))
-        assert next(raw_records) == ('timestamp', 'from', 'to')
+        assert next(raw_records) == ['timestamp', 'from', 'to']
 
         records = (parse_move_record(r) for r in raw_records)
 
