@@ -42,6 +42,11 @@ OutputRecord = collections.namedtuple(
     ],
 )
 
+MoveRecord = collections.namedtuple(
+    'MoveRecord',
+    'timestamp from to',
+)
+
 TimeSpan = collections.namedtuple(
     'TimeSpan',
     'start end',
@@ -76,6 +81,14 @@ def parse_record(raw_record):
         start_date,
         end_date,
     )
+
+def parse_move_record(record):
+    timestamp, from_, to = record
+
+    to = to.rstrip('\n')
+    timestamp = dateutil.parser.parse(timestamp)
+
+    return MoveRecord(timestamp, from_, to)
 
 class ViewsCounter:
     def __init__(self, finder, granularity=datetime.timedelta(hours=1)):
@@ -235,6 +248,19 @@ def counts_for_record(record, views_counter: ViewsCounter):
 def wikify_title(page_title):
     return page_title.replace(' ', '_')
 
+
+def add_utc_if_naive(timestamp: datetime.datetime):
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=datetime.datetime.utc)
+
+    return timestamp
+
+def parse_cmdline_date(timestamp: str):
+    return add_utc_if_naive(
+        dateutil.parser.parse(timestamp)
+    )
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -245,6 +271,21 @@ def parse_args():
     parser.add_argument(
         'counts_dataset_dir',
         type=pathlib.Path,
+    )
+    parser.add_argument(
+        '--start-period',
+        required=True,
+        type=parse_cmdline_date,
+    )
+    parser.add_argument(
+        '--end-period',
+        required=True,
+        type=parse_cmdline_date,
+    )
+    parser.add_argument(
+        'moves_file',
+        type=pathlib.Path,
+        help='CSV containing page moves',
     )
     parser.add_argument(
         'output_dir',
@@ -258,6 +299,23 @@ def main():
     print(args)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    print('Reading moves file...')
+    moves_file = utils.open_compressed_file(args.moves_file)
+    moves = {}
+    with moves_file:
+        raw_records = iter(csv.reader(moves_file))
+        assert next(raw_records) == ('timestamp', 'from', 'to')
+
+        records = (parse_move_record(r) for r in raw_records)
+
+        filtered_records = (
+            r for r in records
+            if args.start_period <= r.timestamp <= args.end_period
+        )
+        for timestamp, from_, to in filtered_records:
+            moves.setdefault(to, []).append((from_, timestamp))
+    print('Done')
 
     counts_finder = pagecountssearch.Finder(args.counts_dataset_dir)
     views_counter = ViewsCounter(
