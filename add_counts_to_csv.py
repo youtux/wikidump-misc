@@ -251,7 +251,7 @@ def wikify_title(page_title):
 
 def add_utc_if_naive(timestamp: datetime.datetime):
     if timestamp.tzinfo is None:
-        timestamp = timestamp.replace(tzinfo=datetime.datetime.utc)
+        timestamp = timestamp.replace(tzinfo=datetime.timezone.utc)
 
     return timestamp
 
