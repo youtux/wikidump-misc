@@ -1,3 +1,4 @@
+import ipdb
 import argparse
 import collections
 import csv
@@ -8,7 +9,6 @@ import urllib.parse
 from pprint import pprint
 
 import dateutil.parser
-import ipdb
 import numpy
 import pagecountssearch
 import pathlib
@@ -206,6 +206,47 @@ class ViewsCounter:
 
         return upper - lower
 
+    @functools.lru_cache(1)
+    def interps_for_pages(self, project, pages):
+        sorted_pages = sorted(pages)
+        interps = {
+            page: self.interp_fn(project, page) for page in sorted_pages
+        }
+        return interps
+
+    def count_multiple_pages(self, project, pages, start_date, end_date):
+        # Avoid useless computation and I/O
+        if not timespan_intersects(
+                self.period,
+                TimeSpan(start_date, end_date),
+                ):
+            return 0
+
+        pages = (wikify_title(p) for p in pages)
+
+        pages = frozenset(pages)
+
+        interps = self.interps_for_pages(project, pages)
+
+        sum_ = 0
+        for page, (interp, min_, max_) in interps.items():
+            if end_date is None:
+                upper = max_
+            else:
+                upper = interp(end_date)
+
+            if start_date is None:
+                lower = min_
+            else:
+                lower = interp(start_date)
+            this_sum = upper - lower
+
+            print('Partial sum for', project, page, start_date, end_date,
+                  'is', this_sum)
+            sum_ += this_sum
+
+        return sum_
+
 
 def to_unix_timestamp(datetime):
     return int(datetime.timestamp())
@@ -372,7 +413,7 @@ def test_timespan_intersects():
 #     pprint(periods)
 #     return periods
 
-def get_redirects_for(cursor, page_title):
+def get_redirects_ids_for(cursor, page_title):
     page_title = wikify_title(page_title)
     with cursor:
         cursor.execute('''
@@ -399,6 +440,20 @@ def get_page_title(cursor, page_id):
         return title
 
 
+@functools.lru_cache(1)
+def get_redirects_for(connection, page_title):
+    redirects_ids = get_redirects_ids_for(
+        connection.cursor(),
+        page_title=page_title,
+    )
+    redirects_titles = [
+        get_page_title(connection.cursor(), page_id)
+        for page_id in redirects_ids
+    ]
+    print('Redirects found for', page_title, ':', redirects_titles)
+    return redirects_titles
+
+
 def counts_for_page(
         connection: sqlite3.Connection,
         views_counter: ViewsCounter,
@@ -410,19 +465,15 @@ def counts_for_page(
 
     print('Looking for counts for', project, page_title, start_date, end_date)
 
-    redirects_ids = get_redirects_for(
-        connection.cursor(),
-        page_title=page_title,
-    )
-    redirects_titles = [
-        get_page_title(connection.cursor(), page_id)
-        for page_id in redirects_ids
-    ]
+    redirects_titles = get_redirects_for(connection, page_title)
 
-    sum_ = sum(
-        views_counter.count(project, page, start_date, end_date)
-        for page in redirects_titles + [page_title]
-    )
+    # sum_ = sum(
+    #     views_counter.count(project, page, start_date, end_date)
+    #     for page in redirects_titles + [page_title]
+    # )
+    pages = redirects_titles + [page_title]
+    sum_ = views_counter.count_multiple_pages(
+        project, pages, start_date, end_date)
     print('Sum:', sum_)
 
     return sum_
