@@ -160,10 +160,12 @@ class ViewsCounter:
 
         # print('xs', xs)
         # print('ys', ys)
+        ys_acc = numpy.cumsum(ys)
 
         scipy_interp = scipy.interpolate.interp1d(
             xs,
-            numpy.cumsum(ys),
+            ys_acc,
+            copy=False,
             assume_sorted=True,
         )
 
@@ -177,11 +179,11 @@ class ViewsCounter:
             if x < xs[0]:
                 return 0.0
             if x > xs[-1]:
-                return xs[-1]
+                return ys_acc[-1]
             else:
                 return scipy_interp(x)
 
-        return interp, xs[0], xs[-1]
+        return interp, ys_acc[0], ys_acc[-1]
 
     def count(self, project, page, start_date, end_date):
         # Avoid useless computation and I/O
