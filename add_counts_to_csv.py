@@ -639,7 +639,8 @@ def main():
         port=db_url.port or 3306,
         user=db_url.username,
         password=db_url.password or '',
-        database=db_url.path.rpartition('/')[-1]
+        database=db_url.path.rpartition('/')[-1],
+        charset='utf8',
     )
     print(db_vars)
     db_conn = pymysql.connect(
