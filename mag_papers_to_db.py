@@ -17,7 +17,7 @@ PapersRecord = collections.namedtuple(
     (
         'paper_id',
         'original_paper_title',
-        'normailzed_paper_title',
+        'normalized_paper_title',
         'paper_publish_year',
         'paper_publish_date',
         'paper_doi',
@@ -48,7 +48,7 @@ def parse_papers_record(raw_record):
     (
         paper_id,
         original_paper_title,
-        normailzed_paper_title,
+        normalized_paper_title,
         paper_publish_year,
         paper_publish_date,
         paper_doi,
@@ -72,7 +72,7 @@ def parse_papers_record(raw_record):
     return PapersRecord(
         paper_id,
         original_paper_title,
-        normailzed_paper_title,
+        normalized_paper_title,
         paper_publish_year,
         paper_publish_date,
         paper_doi,
@@ -116,12 +116,12 @@ def create_tables_and_indexes(cursor):
 CREATE TABLE IF NOT EXISTS `mag_papers` (
   `paper_id` varchar(50) NOT NULL,
   `original_paper_title` varchar(255) DEFAULT NULL,
---  `normailzed_paper_title` TEXT DEFAULT NULL,
+  `normalized_paper_title` TEXT DEFAULT NULL,
   `paper_publish_year` int(4) DEFAULT NULL,
   `paper_publish_date` datetime DEFAULT NULL,
   `paper_doi` varchar(255) DEFAULT NULL,
   `original_venue_name` TEXT DEFAULT NULL,
---  `normalized_venue_name` TEXT DEFAULT NULL,
+  `normalized_venue_name` TEXT DEFAULT NULL,
   `journal_id_mapped_to_venue_name` varchar(255) DEFAULT NULL,
   `conference_series_id_mapped_to_venue_name` varchar(255) DEFAULT NULL,
   `paper_rank` int(11) DEFAULT NULL,
@@ -139,7 +139,7 @@ def main():
     INSERT INTO `mag_papers` (
         `paper_id`,
         `original_paper_title`,
-        `normailzed_paper_title`,
+        `normalized_paper_title`,
         `paper_publish_year`,
         `paper_publish_date`,
         `paper_doi`,
@@ -148,7 +148,7 @@ def main():
         `journal_id_mapped_to_venue_name`,
         `conference_series_id_mapped_to_venue_name`,
         `paper_rank`
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     '''
 
     if args.create_tables:
@@ -174,7 +174,7 @@ def main():
             (
                 r.paper_id[:50],
                 r.original_paper_title[:255],
-                r.normailzed_paper_title[:255],
+                r.normalized_paper_title[:255],
                 r.paper_publish_year,
                 r.paper_publish_date,
                 r.paper_doi[:255],
