@@ -115,18 +115,18 @@ def create_tables_and_indexes(cursor):
         cursor.execute('''
 CREATE TABLE IF NOT EXISTS `mag_papers` (
   `paper_id` varchar(50) NOT NULL,
-  `original_paper_title` TEXT DEFAULT NULL,
-  `normailzed_paper_title` TEXT DEFAULT NULL,
+  `original_paper_title` varchar(255) DEFAULT NULL,
+--  `normailzed_paper_title` TEXT DEFAULT NULL,
   `paper_publish_year` int(4) DEFAULT NULL,
   `paper_publish_date` datetime DEFAULT NULL,
-  `paper_doi` varbinary(255) DEFAULT NULL,
+  `paper_doi` varchar(255) DEFAULT NULL,
   `original_venue_name` TEXT DEFAULT NULL,
-  `normalized_venue_name` TEXT DEFAULT NULL,
-  `journal_id_mapped_to_venue_name` TEXT DEFAULT NULL,
-  `converence_series_id_mapped_to_venue_name` TEXT DEFAULT NULL,
+--  `normalized_venue_name` TEXT DEFAULT NULL,
+  `journal_id_mapped_to_venue_name` varchar(255) DEFAULT NULL,
+  `conference_series_id_mapped_to_venue_name` varchar(255) DEFAULT NULL,
   `paper_rank` int(11) DEFAULT NULL,
   PRIMARY KEY (`paper_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ''')
 
 
@@ -146,9 +146,9 @@ def main():
         `original_venue_name`,
         `normalized_venue_name`,
         `journal_id_mapped_to_venue_name`,
-        `converence_series_id_mapped_to_venue_name`,
+        `conference_series_id_mapped_to_venue_name`,
         `paper_rank`
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     '''
 
     if args.create_tables:
@@ -170,8 +170,24 @@ def main():
             for r in csvreader
         )
 
+        records_truncated = (
+            (
+                r.paper_id[:50],
+                r.original_paper_title[:255],
+                r.normailzed_paper_title[:255],
+                r.paper_publish_year,
+                r.paper_publish_date,
+                r.paper_doi[:255],
+                r.original_venue_name[:255],
+                r.normalized_venue_name[:255],
+                r.journal_id_mapped_to_venue_name[:255],
+                r.converence_series_id_mapped_to_venue_name[:255],
+                r.paper_rank,
+            ) for r in records
+        )
+
         records_with_progress = frogress.bar(
-            records,
+            records_truncated,
             steps=args.expected_records,
         )
         cursor.executemany(insert_tpl, records_with_progress)
