@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS `mag_papers` (
   `normailzed_paper_title` TEXT DEFAULT NULL,
   `paper_publish_year` int(4) DEFAULT NULL,
   `paper_publish_date` datetime DEFAULT NULL,
-  `paper_doi` TEXT DEFAULT NULL,
+  `paper_doi` varbinary(255) DEFAULT NULL,
   `original_venue_name` TEXT DEFAULT NULL,
   `normalized_venue_name` TEXT DEFAULT NULL,
   `journal_id_mapped_to_venue_name` TEXT DEFAULT NULL,
