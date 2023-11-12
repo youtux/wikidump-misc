@@ -70,11 +70,7 @@ def parse_record(raw_record):
     project, page_id, page_title, identifier_type, identifier_id, start_date, end_date = raw_record
 
     page_id = int(page_id)
-    if not end_date:
-        end_date = None
-    else:
-        end_date = parse_timestamp(end_date)
-
+    end_date = None if not end_date else parse_timestamp(end_date)
     if not start_date:
         start_date = None
     else:
@@ -151,7 +147,7 @@ class ViewsCounter:
         granularity_unix = int(granularity.total_seconds())
 
         xs = list(range(start_unix, end_unix, granularity_unix))
-        ys = list(0 for _ in range(len(xs)))
+        ys = [0 for _ in range(len(xs))]
 
         for timestamp, views in views_list:
             timestamp_unix = int(timestamp.timestamp())
@@ -178,10 +174,7 @@ class ViewsCounter:
 
             if x < xs[0]:
                 return 0.0
-            if x > xs[-1]:
-                return ys_acc[-1]
-            else:
-                return scipy_interp(x)
+            return ys_acc[-1] if x > xs[-1] else scipy_interp(x)
 
         return interp, ys_acc[0], ys_acc[-1]
 
@@ -196,25 +189,14 @@ class ViewsCounter:
 
         interp, min_, max_ = self.interp_fn(project, page)
 
-        if end_date is None:
-            upper = max_
-        else:
-            upper = interp(end_date)
-
-        if start_date is None:
-            lower = min_
-        else:
-            lower = interp(start_date)
-
+        upper = max_ if end_date is None else interp(end_date)
+        lower = min_ if start_date is None else interp(start_date)
         return upper - lower
 
     @functools.lru_cache(1)
     def interps_for_pages(self, project, pages):
         sorted_pages = sorted(pages)
-        interps = {
-            page: self.interp_fn(project, page) for page in sorted_pages
-        }
-        return interps
+        return {page: self.interp_fn(project, page) for page in sorted_pages}
 
     def count_multiple_pages(self, project, pages, start_date, end_date):
         # Avoid useless computation and I/O
@@ -232,15 +214,8 @@ class ViewsCounter:
 
         sum_ = 0
         for page, (interp, min_, max_) in interps.items():
-            if end_date is None:
-                upper = max_
-            else:
-                upper = interp(end_date)
-
-            if start_date is None:
-                lower = min_
-            else:
-                lower = interp(start_date)
+            upper = max_ if end_date is None else interp(end_date)
+            lower = min_ if start_date is None else interp(start_date)
             this_sum = upper - lower
 
             print('Partial sum for', project, page, start_date, end_date,
@@ -424,8 +399,7 @@ def get_redirects_ids_for(cursor, page_title):
             where rd_namespace = 0 and rd_title = %s
             ''', (page_title,))
         rows = cursor.fetchall()
-        ids = [row[0] for row in rows]
-        return ids
+        return [row[0] for row in rows]
 
 
 def get_page_title(cursor, page_id):

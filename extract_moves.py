@@ -36,8 +36,7 @@ def parse_args():
 def get_redirect(params: str):
     try:
         params = phpserialize.loads(params.encode('utf-8'))
-        redirect = params[b'4::target'].decode('utf-8')
-        return redirect
+        return params[b'4::target'].decode('utf-8')
     except ValueError:
         return params
 
@@ -45,7 +44,7 @@ def get_redirect(params: str):
 def main():
     args = parse_args()
 
-    move_actions = set(['move', 'move_redir'])
+    move_actions = {'move', 'move_redir'}
 
     input_file = utils.open_compressed_file(args.input_file)
     # output_file = gzip.open(str(args.output_file), 'wt', encoding='utf-8')

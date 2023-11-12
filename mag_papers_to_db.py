@@ -59,11 +59,7 @@ def parse_papers_record(raw_record):
         paper_rank,
     ) = raw_record
 
-    if not paper_publish_year:
-        paper_publish_year = None
-    else:
-        paper_publish_year = int(paper_publish_year)
-
+    paper_publish_year = int(paper_publish_year) if paper_publish_year else None
     if not paper_publish_date:
         paper_publish_date = None
     else:

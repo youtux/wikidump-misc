@@ -34,8 +34,7 @@ def open_compressed_file(file_path):
             ['7z', 'e', '-so', str(file_path)],
             stdout=subprocess.PIPE,
         )
-        w = io.TextIOWrapper(f.stdout, encoding=encoding)
-        return w
+        return io.TextIOWrapper(f.stdout, encoding=encoding)
     elif file_path.suffix == '.gz':
         return gzip.open(str(file_path), mode, encoding=encoding)
     else:
@@ -66,11 +65,7 @@ def parse_identifier_history_record(raw_record):
     ) = raw_record
 
     page_id = int(page_id)
-    if not end_date:
-        end_date = None
-    else:
-        end_date = parse_timestamp(end_date)
-
+    end_date = None if not end_date else parse_timestamp(end_date)
     if not start_date:
         start_date = None
     else:
@@ -89,7 +84,7 @@ def parse_identifier_history_record(raw_record):
 
 def parse_mysql_url(url):
     db_url = urllib.parse.urlparse(url)
-    db_vars = dict(
+    return dict(
         host=db_url.hostname,
         port=db_url.port or 3306,
         user=db_url.username,
@@ -97,4 +92,3 @@ def parse_mysql_url(url):
         database=db_url.path.rpartition('/')[-1],
         charset='utf8',
     )
-    return db_vars
